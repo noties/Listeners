@@ -1,0 +1,27 @@
+buildscript {
+    repositories {
+        google()
+        jcenter()
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        jcenter()
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion '4.3'
+    distributionType 'all'
+}
+
+ext {
+    SUPPORT_ANNOTATIONS = 'com.android.support:support-annotations:26.1.0'
+    TEST_J_UNIT = 'junit:junit:4.12'
+}
