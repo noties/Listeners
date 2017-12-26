@@ -13,6 +13,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+@SuppressWarnings("unused")
 public class ListenersTest {
 
     @SuppressWarnings("unused")
@@ -273,6 +274,30 @@ public class ListenersTest {
     }
 
     @Test
+    public void each_element_removes_first() {
+
+        final List<Object> list = new ArrayList<>(10);
+        for (int i = 0; i < 10; i++) {
+            list.add(new Object());
+        }
+
+        final Listeners<Object> listeners = Listeners.create();
+        for (Object o : list) {
+            listeners.add(o);
+        }
+
+        int iterations = 0;
+
+        // actually the same as removing self
+        for (Object o : listeners.begin()) {
+            listeners.remove(list.get(0));
+            iterations += 1;
+        }
+
+        assertEquals(10, iterations);
+    }
+
+    @Test
     public void empty_iterator_throws() {
 
         final Listeners<Object> listeners = Listeners.create();
@@ -299,13 +324,228 @@ public class ListenersTest {
 
         //noinspection StatementWithEmptyBody
         for (Object o : listeners.begin()) {
-
         }
 
         try {
             iterator.next();
             assertTrue(false);
         } catch (NoSuchElementException e) {
+            assertTrue(true);
+        }
+    }
+
+    @SuppressWarnings("unused")
+    @Test
+    public void nested_begin_with_reversed() {
+
+        final Listeners<Object> listeners = Listeners.create(5);
+        listeners.add(new Object());
+
+        boolean started = false;
+
+        for (Object o1 : listeners.begin()) {
+            started = true;
+            try {
+                //noinspection StatementWithEmptyBody
+                for (Object o2 : listeners.beginReversed()) ;
+                assertTrue(false);
+            } catch (IllegalStateException e) {
+                assertTrue(true);
+            }
+        }
+
+        assertTrue(started);
+    }
+
+    @Test
+    public void nested_begin_2_reversed() {
+
+        final Listeners<Object> listeners = Listeners.create(7);
+        listeners.add(new Object());
+
+        boolean started = false;
+
+        //noinspection unused
+        for (Object o1 : listeners.beginReversed()) {
+            started = true;
+            try {
+                listeners.beginReversed();
+                assertTrue(false);
+            } catch (IllegalStateException e) {
+                assertTrue(true);
+            }
+        }
+        assertTrue(started);
+    }
+
+    @Test
+    public void each_element_removes_self_reversed() {
+
+        final Listeners<Object> listeners = Listeners.create();
+        for (int i = 0; i < 9; i++) {
+            listeners.add(new Object());
+        }
+
+        int iterations = 0;
+
+        for (Object o : listeners.beginReversed()) {
+            iterations += 1;
+            listeners.remove(o);
+        }
+
+        assertEquals(9, iterations);
+        assertEquals(0, listeners.size());
+    }
+
+    @Test
+    public void each_element_removes_next_reversed() {
+
+        final Listeners<Object> listeners = Listeners.create();
+
+        final Object[] objects = new Object[10];
+
+        for (int i = 0; i < 10; i++) {
+            objects[i] = new Object();
+            listeners.add(objects[i]);
+        }
+
+        int iterations = 0;
+
+        for (Object o : listeners.beginReversed()) {
+            if (iterations != 0) {
+                listeners.remove(objects[objects.length - iterations]);
+            }
+            iterations += 1;
+        }
+
+        assertEquals(10, iterations);
+        assertEquals(1, listeners.size());
+    }
+
+    @Test
+    public void each_element_removes_first_reversed() {
+
+        final List<Object> list = new ArrayList<>(10);
+        for (int i = 0; i < 10; i++) {
+            list.add(new Object());
+        }
+
+        final Listeners<Object> listeners = Listeners.create();
+        for (Object o : list) {
+            listeners.add(o);
+        }
+
+        int iterations = 0;
+
+        for (Object o : listeners.beginReversed()) {
+            if (iterations == 5) {
+                assertEquals(o, list.get(0));
+            }
+            listeners.remove(list.remove(0));
+            iterations += 1;
+        }
+
+        // actually 6 as last item removes self
+        assertEquals(6, iterations);
+    }
+
+    @Test
+    public void each_element_removes_previous_reversed() {
+
+        final Listeners<Object> listeners = Listeners.create();
+        for (int i = 0; i < 10; i++) {
+            listeners.add(new Object());
+        }
+
+        Object previous = null;
+        int iterations = 0;
+
+        for (Object o: listeners.beginReversed()) {
+
+            if (previous != null) {
+                listeners.remove(previous);
+            }
+
+            previous = o;
+            iterations += 1;
+        }
+
+        assertEquals(10, iterations);
+        assertEquals(1, listeners.size());
+    }
+
+    @Test
+    public void natural_iteration_end_reversed() {
+
+        final Listeners<Object> listeners = Listeners.create();
+        for (int i = 0; i < 10; i++) {
+            listeners.add(new Object());
+        }
+
+        assertFalse(listeners.isIterating());
+
+        int iterations = 0;
+
+        for (Object o : listeners.beginReversed()) {
+            assertTrue(listeners.isIterating());
+            iterations += 1;
+        }
+
+        assertFalse(listeners.isIterating());
+        assertEquals(10, iterations);
+    }
+
+    @Test
+    public void add_during_iteration_reversed() {
+        // must not affect iteration (as we are adding at the end)
+
+        final Listeners<Object> listeners = Listeners.create();
+        for (int i = 0; i < 10; i++) {
+            listeners.add(new Object());
+        }
+
+        int iterations = 0;
+
+        for (Object o : listeners.beginReversed()) {
+            listeners.add(new Object());
+            iterations += 1;
+        }
+
+        assertEquals(10, iterations);
+        assertEquals(20, listeners.size());
+    }
+
+    @Test
+    public void end_called_inside_iteration_reversed() {
+
+        final Listeners<Object> listeners = Listeners.create();
+        for (int i = 0; i < 10; i++) {
+            listeners.add(new Object());
+        }
+
+        int iterations = 0;
+
+        for (Object o : listeners.beginReversed()) {
+            if (iterations == 5) {
+                listeners.end();
+            } else {
+                iterations += 1;
+            }
+        }
+
+        assertEquals(5, iterations);
+    }
+
+    @Test
+    public void iterator_remove_throws_reversed() {
+
+        final Listeners<Object> listeners = Listeners.create();
+        listeners.add(new Object());
+
+        try {
+            listeners.beginReversed().iterator().remove();
+            assertTrue(false);
+        } catch (UnsupportedOperationException e) {
             assertTrue(true);
         }
     }

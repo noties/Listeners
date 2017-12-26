@@ -87,6 +87,9 @@ public abstract class Listeners<T> {
     @NonNull
     public abstract Iterable<T> begin() throws IllegalStateException;
 
+    @NonNull
+    public abstract Iterable<T> beginReversed() throws IllegalStateException;
+
     /**
      * Marks as finished previous iteration or finishes current one if called whilst iterating
      */
