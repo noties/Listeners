@@ -460,7 +460,7 @@ public class ListenersTest {
         Object previous = null;
         int iterations = 0;
 
-        for (Object o: listeners.beginReversed()) {
+        for (Object o : listeners.beginReversed()) {
 
             if (previous != null) {
                 listeners.remove(previous);
@@ -548,5 +548,35 @@ public class ListenersTest {
         } catch (UnsupportedOperationException e) {
             assertTrue(true);
         }
+    }
+
+    @Test
+    public void no_iteration() {
+
+        final Listeners<Object> listeners = Listeners.create();
+
+        int iterations = 0;
+
+        for (Object o : listeners.begin()) {
+            iterations += 1;
+        }
+
+        assertEquals(0, iterations);
+        assertFalse(listeners.isIterating());
+    }
+
+    @Test
+    public void no_iteration_reversed() {
+
+        final Listeners<Object> listeners = Listeners.create();
+
+        int iterations = 0;
+
+        for (Object o : listeners.beginReversed()) {
+            iterations += 1;
+        }
+
+        assertEquals(0, iterations);
+        assertFalse(listeners.isIterating());
     }
 }
