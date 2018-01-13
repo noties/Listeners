@@ -22,11 +22,20 @@ class ListenersImpl<T> extends Listeners<T> implements Iterable<T> {
 
     @Override
     public void add(@NonNull T t) {
+
+        // we do not need to do anything even if iteration is happening
+        // if we are iterating normally - this newly added element will be just
+        //      added and presented via Iterator
+        //
+        // if we are iterating backwards - this newly added element will be just
+        //      at the end and won't be presented via iteration
+
         list.add(t);
     }
 
     @Override
     public void remove(@NonNull T t) {
+
         if (isIterating) {
 
             final int index = list.indexOf(t);
@@ -72,7 +81,25 @@ class ListenersImpl<T> extends Listeners<T> implements Iterable<T> {
         }
 
         isIterating = true;
+
         iterator.index = 0;
+        iterator.reversed = false;
+
+        return this;
+    }
+
+    @NonNull
+    @Override
+    public Iterable<T> beginReversed() throws IllegalStateException {
+
+        if (isIterating) {
+            throw new IllegalStateException();
+        }
+
+        isIterating = true;
+
+        iterator.index = size() - 1;
+        iterator.reversed = true;
 
         return this;
     }
@@ -91,27 +118,51 @@ class ListenersImpl<T> extends Listeners<T> implements Iterable<T> {
     private class IteratorImpl implements Iterator<T> {
 
         int index;
+        boolean reversed;
 
         @Override
         public boolean hasNext() {
-            final boolean result = isIterating && index < size();
-            if (!result
-                    && isIterating) {
+
+            // early return if we are not in iteration state
+            if (!isIterating) {
+                return false;
+            }
+
+            final boolean result;
+
+            if (!reversed) {
+                result = index < size();
+            } else {
+                result = index > -1;
+            }
+
+            // finish _natural_ iteration
+            if (!result) {
                 end();
             }
+
             return result;
         }
 
         @Override
         public T next() {
 
+            // this check should occur no matter how we iterate (normal|reversed)
             if (!isIterating
                     || index < 0
                     || index >= size()) {
                 throw new NoSuchElementException();
             }
 
-            return list.get(index++);
+            final T next;
+
+            if (!reversed) {
+                next = list.get(index++);
+            } else {
+                next = list.get(index--);
+            }
+
+            return next;
         }
 
         @Override
